@@ -24,15 +24,15 @@ func init() {
 }
 
 var (
-	endpointColor = color.New(color.BgMagenta)
-	titleColor    = color.New(color.BgCyan, color.FgWhite)
-	valueColor    = color.New(color.FgBlack, color.BgGreen, color.Bold)
-	labelColor    = color.New(color.FgBlack, color.BgYellow)
+	endpointColor = color.New(color.FgMagenta, color.Bold).PrintfFunc()
+	titleColor    = color.New(color.FgCyan).PrintfFunc()
+	valueColor    = color.New(color.FgGreen).PrintfFunc()
+	labelColor    = color.New(color.FgYellow).PrintfFunc()
 )
 
 // DisplayMetrics prints the metrics to the screen after filtering.
 func DisplayMetrics(decoder expfmt.Decoder, endpoint string, nameFilter map[string]bool, labelFilter map[string]string) {
-	endpointColor.Printf("Endpoint %s\n", endpoint)
+	endpointColor("Endpoint %s\n", endpoint)
 	for {
 		mf := dto.MetricFamily{}
 		err := decoder.Decode(&mf)
@@ -44,7 +44,7 @@ func DisplayMetrics(decoder expfmt.Decoder, endpoint string, nameFilter map[stri
 		}
 
 		metricType := mf.GetType()
-		titleColor.Printf("%s (%s): %s\n", mf.GetName(), metricType, mf.GetHelp())
+		titleColor("%s (%s): %s\n", mf.GetName(), metricType, mf.GetHelp())
 
 		for _, metric := range mf.Metric {
 			if labelFilter != nil && !matchesLabelFilter(metric, labelFilter) {
@@ -56,15 +56,16 @@ func DisplayMetrics(decoder expfmt.Decoder, endpoint string, nameFilter map[stri
 				labelStrings = append(labelStrings, fmt.Sprintf("%s=\"%s\"", labelPair.GetName(), labelPair.GetValue()))
 			}
 			labels := strings.Join(labelStrings, ",")
+			labelColor("%s", labels)
 
 			switch metricType {
 			// only support counter and gauge for now
 			case dto.MetricType_COUNTER:
-				valueColor.Printf("%.0f\n", metric.GetCounter().GetValue())
+				valueColor(" %.0f\n", metric.GetCounter().GetValue())
 			case dto.MetricType_GAUGE:
-				valueColor.Printf("%.2f\n", metric.GetGauge().GetValue())
+				valueColor(" %.2f\n", metric.GetGauge().GetValue())
 			}
-			labelColor.Printf("%s\n", labels)
+			
 		}
 	}
 }
