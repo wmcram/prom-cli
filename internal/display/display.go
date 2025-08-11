@@ -25,15 +25,13 @@ func init() {
 }
 
 var (
-	endpointColor = color.New(color.FgHiMagenta, color.Bold).PrintfFunc()
 	titleColor    = color.New(color.FgHiCyan).PrintfFunc()
 	valueColor    = color.New(color.FgHiGreen).PrintfFunc()
-	labelColor    = color.New(color.FgYellow).PrintfFunc()
+	labelColor    = color.New(color.FgMagenta).PrintfFunc()
 )
 
 // DisplayMetrics prints the metrics to the screen after filtering.
-func DisplayMetrics(decoder expfmt.Decoder, endpoint string, filters *processing.Filters) {
-	endpointColor("Endpoint %s\n", endpoint)
+func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) {
 	for {
 		mf := &dto.MetricFamily{}
 		err := decoder.Decode(mf)
