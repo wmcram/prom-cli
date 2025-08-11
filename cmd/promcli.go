@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"github.com/prometheus/common/expfmt"
-	display "github.com/wmcram/prom-cli"
+	"github.com/wmcram/prom-cli/internal/display"
+	"github.com/wmcram/prom-cli/internal/processing"
 )
 
 func main() {
@@ -15,25 +16,24 @@ func main() {
 	var typeFilter *string = flag.String("type", "", "Filter metrics by type: TYPE1,TYPE2,...")
 
 	flag.Parse()
-	filters := display.NewFilters(*nameFilter, *labelFilter, *typeFilter)
+	filters := processing.NewFilters(*nameFilter, *labelFilter, *typeFilter)
 
 	endpoints := flag.Args()
-	if len(endpoints) == 0 {
-		fmt.Println("Usage: promcli <endpoints>")
+	if len(endpoints) != 1 {
+		fmt.Println("Usage: promcli [flags] endpoint")
 		return
 	}
 
-	for _, endpoint := range endpoints {
-		resp, err := http.Get(endpoint)
-		if err != nil {
-			fmt.Println("Error reaching endpoint:", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		decoder := expfmt.NewDecoder(resp.Body, expfmt.NewFormat(expfmt.TypeTextPlain))
-		display.DisplayMetrics(decoder, endpoint, filters)
+	endpoint := endpoints[0]
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		fmt.Println("Error reaching endpoint:", err)
+		return
 	}
+	defer resp.Body.Close()
+
+	decoder := expfmt.NewDecoder(resp.Body, expfmt.NewFormat(expfmt.TypeTextPlain))
+	display.DisplayMetrics(decoder, endpoint, filters)
 }
 
 
