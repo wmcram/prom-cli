@@ -2,14 +2,15 @@ package display
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/fatih/color"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
-	"golang.org/x/term"
 	"github.com/wmcram/prom-cli/internal/processing"
+	"golang.org/x/term"
 )
 
 var TermWidth, TermHeight int
@@ -31,12 +32,16 @@ var (
 )
 
 // DisplayMetrics prints the metrics to the screen after filtering.
-func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) {
+func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) error {
 	for {
 		mf := &dto.MetricFamily{}
 		err := decoder.Decode(mf)
 		if err != nil {
-			break
+			if err == io.EOF {
+				break
+			} else {
+				return err
+			}
 		}
 		if !filters.MatchesMetricFamily(mf) {
 			continue
@@ -66,4 +71,5 @@ func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) {
 			
 		}
 	}
+	return nil
 }

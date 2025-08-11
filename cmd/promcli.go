@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,10 +17,11 @@ import (
 func main() {
 	cmd := &cli.Command{
 		Commands: []*cli.Command{
+			// promcli get
 			{
 				Name: "get",
 				Aliases: []string{"g"},
-				Usage: "get metrics from an endpoint",
+				Usage: "show metrics from an endpoint",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name: "name",
@@ -35,13 +37,26 @@ func main() {
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					endpoint := cmd.Args().Get(0)
-					if endpoint == "" {
-						return fmt.Errorf("endpoint is required")
+					if cmd.NArg() != 1 {
+						return errors.New("usage: promcli get [FLAGS] ENDPOINT")
 					}
+					endpoint := cmd.Args().Get(0)
 					filters := processing.NewFilters(cmd.String("name"), cmd.String("label"), cmd.String("type"))
 					return getEndpoint(endpoint, filters)
 				},
+			},
+			// promcli watch
+			{
+				Name: "watch",
+				Aliases: []string{"w"},
+				Usage: "watch an endpoint for live metrics",
+				Flags: []cli.Flag{
+
+				},
+			},
+			// promcli mock
+			{
+
 			},
 		},
 	}
@@ -57,10 +72,12 @@ func getEndpoint(endpoint string, filters *processing.Filters) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("non-200 status code: %d", resp.StatusCode)
+	}
 
 	decoder := expfmt.NewDecoder(resp.Body, expfmt.NewFormat(expfmt.TypeTextPlain))
-	display.DisplayMetrics(decoder, filters)
-	return nil
+	return display.DisplayMetrics(decoder, filters)
 }
 
 
