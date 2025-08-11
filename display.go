@@ -24,30 +24,29 @@ func init() {
 }
 
 var (
-	endpointColor = color.New(color.FgMagenta, color.Bold).PrintfFunc()
-	titleColor    = color.New(color.FgCyan).PrintfFunc()
-	valueColor    = color.New(color.FgGreen).PrintfFunc()
+	endpointColor = color.New(color.FgHiMagenta, color.Bold).PrintfFunc()
+	titleColor    = color.New(color.FgHiCyan).PrintfFunc()
+	valueColor    = color.New(color.FgHiGreen).PrintfFunc()
 	labelColor    = color.New(color.FgYellow).PrintfFunc()
 )
 
 // DisplayMetrics prints the metrics to the screen after filtering.
-func DisplayMetrics(decoder expfmt.Decoder, endpoint string, nameFilter map[string]bool, labelFilter map[string]string) {
+func DisplayMetrics(decoder expfmt.Decoder, endpoint string, filters *Filters) {
 	endpointColor("Endpoint %s\n", endpoint)
 	for {
-		mf := dto.MetricFamily{}
-		err := decoder.Decode(&mf)
+		mf := &dto.MetricFamily{}
+		err := decoder.Decode(mf)
 		if err != nil {
 			break
 		}
-		if nameFilter != nil && !nameFilter[mf.GetName()] {
+		if !filters.MatchesMetricFamily(mf) {
 			continue
 		}
 
 		metricType := mf.GetType()
 		titleColor("%s (%s): %s\n", mf.GetName(), metricType, mf.GetHelp())
-
 		for _, metric := range mf.Metric {
-			if labelFilter != nil && !matchesLabelFilter(metric, labelFilter) {
+			if !filters.MatchesMetric(metric) {
 				continue
 			}
 
@@ -70,13 +69,78 @@ func DisplayMetrics(decoder expfmt.Decoder, endpoint string, nameFilter map[stri
 	}
 }
 
-// matchesLabelFilter determines whether this metric is matched by the given labelFilter
-func matchesLabelFilter(metric *dto.Metric, labelFilter map[string]string) bool {
-	goal := len(labelFilter)
-	for _, labelPair := range metric.GetLabel() {
-		if labelFilter[labelPair.GetName()] == labelPair.GetValue() {
+type Filters struct {
+	nameFilter map[string]bool
+	labelFilter map[string]string
+	typeFilter map[string]bool
+}
+
+func NewFilters(nameFilter string, labelFilter string, typeFilter string) *Filters {
+	return &Filters{
+		nameFilter: processNameFilter(nameFilter),
+		labelFilter: processLabelFilter(labelFilter),
+		typeFilter: processTypeFilter(typeFilter),
+	}
+}
+
+// MatchesMetricFamily determines whether this metric family passes the filter
+func (f *Filters) MatchesMetricFamily(mf *dto.MetricFamily) bool {
+	if f.nameFilter != nil && !f.nameFilter[mf.GetName()] {
+		return false
+	}
+	if f.typeFilter != nil && !f.typeFilter[mf.GetType().String()] {
+		return false
+	}
+	return true
+}
+
+// MatchesMetric determines whether this metric passes the filter
+func (f *Filters) MatchesMetric(m *dto.Metric) bool {
+	goal := len(f.labelFilter)
+	for _, labelPair := range m.GetLabel() {
+		if f.labelFilter[labelPair.GetName()] == labelPair.GetValue() {
 			goal--
 		}
 	}
 	return goal == 0
+}
+
+// processNameFilter parses a cli flag into a map of name filters
+func processNameFilter(filter string) map[string]bool {
+	if filter == "" {
+		return nil
+	}
+	m := make(map[string]bool)
+	for _, name := range strings.Split(filter, ",") {
+		m[name] = true
+	}
+	return m
+}
+
+// processTypeFilter parses a cli flag into a map of type filters
+func processTypeFilter(filter string) map[string]bool {
+	if filter == "" {
+		return nil
+	}
+	m := make(map[string]bool)
+	for _, kind := range strings.Split(filter, ", ") {
+		m[kind] = true
+	}
+	return m
+}
+
+// processLabelFilter parses a cli flag into a map of label filters
+func processLabelFilter(filter string) map[string]string {
+	if filter == "" {
+		return nil
+	}
+	m := make(map[string]string)
+	for pair := range strings.SplitSeq(filter, ", ") {
+		parts := strings.Split(pair, "=")
+		if len(parts) != 2 {
+			continue
+		}
+		m[parts[0]] = parts[1]
+	}
+	return m
 }
