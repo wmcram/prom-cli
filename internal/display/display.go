@@ -92,7 +92,7 @@ func GraphMetric(ctx context.Context, endpoint string, filters *processing.Filte
 	if err != nil {
 		return err
 	}
-	ts = append(ts, v) 
+	ts = append(ts, v)
 	printGraph(endpoint, metricName, ts)
 	fmt.Println("The graph needs to get a few data points before it can display properly! Remember that the prometheus endpoint might also update its metrics on a timer, so try to keep them synced.")
 	for {
@@ -102,13 +102,13 @@ func GraphMetric(ctx context.Context, endpoint string, filters *processing.Filte
 			if err != nil {
 				return err
 			}
-			ts = append(ts, v) 
+			ts = append(ts, v)
 			printGraph(endpoint, metricName, ts)
 			secs = 0
 		case <-counter.C:
 			secs += 1
 			// \x08 overwrites the last character
-			fmt.Printf("\x08%d", (int(interval.Seconds())-secs))
+			fmt.Printf("\x08%d", (int(interval.Seconds()) - secs))
 		case <-ctx.Done():
 			return nil
 		}
@@ -118,11 +118,11 @@ func GraphMetric(ctx context.Context, endpoint string, filters *processing.Filte
 // printGraph prints the graph to the screen.
 func printGraph(endpoint string, metricName string, ts []float64) {
 	asciigraph.Clear()
-	plt := asciigraph.Plot(ts, 
-		asciigraph.AxisColor(asciigraph.Salmon), 
-		asciigraph.Width(TermWidth/2), 
-		asciigraph.Height(TermHeight/2), 
-		asciigraph.Caption(fmt.Sprintf("%s -- %s", endpoint, metricName)), 
+	plt := asciigraph.Plot(ts,
+		asciigraph.AxisColor(asciigraph.Salmon),
+		asciigraph.Width(TermWidth/2),
+		asciigraph.Height(TermHeight/2),
+		asciigraph.Caption(fmt.Sprintf("%s -- %s", endpoint, metricName)),
 		asciigraph.Offset(TermWidth/5),
 	)
 	fmt.Println(plt)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"os"
 
 	"github.com/guptarohit/asciigraph"
 	"github.com/urfave/cli/v3"
@@ -25,10 +26,14 @@ var watchCommand = &cli.Command{
 			Value:   5 * time.Second,
 		}),
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		if cmd.NArg() != 1 {
-			return errors.New("usage: promcli watch [FLAGS] ENDPOINT")
+		var endpoint string
+		if os.Getenv(endpointEnv) != "" {
+			endpoint = os.Getenv(endpointEnv)
+		} else if cmd.NArg() == 1 {
+			endpoint = cmd.Args().Get(0)
+		} else {
+			return errors.New("usage: promcli get [FLAGS] ENDPOINT")
 		}
-		endpoint := cmd.Args().Get(0)
 		filters := processing.NewFilters(cmd.String("name"), cmd.String("label"), cmd.String("type"))
 		ticker := time.NewTicker(cmd.Duration("interval"))
 		defer ticker.Stop()

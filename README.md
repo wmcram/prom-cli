@@ -27,3 +27,7 @@ As long as `GOBIN` is in your `PATH`, you should be able to just type
 - `graph`: like above, but visualized as a graph
 - `mock`: for serving a mock metrics endpoint from a file
 
+For subcommands that interact with an external endpoint, you can set
+the environment variable `PROMCLI_ENDPOINT` to avoid typing it out for
+every command.
+

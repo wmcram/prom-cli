@@ -11,7 +11,8 @@ import (
 func main() {
 	cmd := &cli.Command{
 		Name:                  "promcli",
-		Description:           "A command line tool for working with prometheus endpoints.",
+		Description:           `promcli is an easy-to-use command-line tool for interacting with Prometheus endpoints. Its output is explicitly designed to be human-readable and easier to filter than grep'ing and awk'ing your way through curl output.`,
+		Usage:                 "a command line tool for working with prometheus endpoints.",
 		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			getCommand,

@@ -3,11 +3,16 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
 
 	"github.com/urfave/cli/v3"
 	"github.com/wmcram/prom-cli/internal/display"
 	"github.com/wmcram/prom-cli/internal/gather"
 	"github.com/wmcram/prom-cli/internal/processing"
+)
+
+const (
+	endpointEnv = "PROMCLI_ENDPOINT"
 )
 
 // A set of command-line flags for filtering on a list of Prometheus metrics.
@@ -39,22 +44,27 @@ var getCommand = &cli.Command{
 	Usage:   "show metrics from an endpoint",
 	Flags:   filterFlags,
 	Action: func(ctx context.Context, cmd *cli.Command) error {
-		if cmd.NArg() != 1 {
+		var endpoint string
+		if os.Getenv(endpointEnv) != "" {
+			endpoint = os.Getenv(endpointEnv)
+		} else if cmd.NArg() == 1 {
+			endpoint = cmd.Args().Get(0)
+		} else {
 			return errors.New("usage: promcli get [FLAGS] ENDPOINT")
 		}
-		endpoint := cmd.Args().Get(0)
+		
 		filters := processing.NewFilters(cmd.String("name"), cmd.String("label"), cmd.String("type"))
 		return getAndDisplayMetrics(endpoint, filters)
 	},
 }
 
-// getAndDisplayMetrics is a helper function for shared behavior between 
+// getAndDisplayMetrics is a helper function for shared behavior between
 // `promcli get` and `promcli watch`. It queries a metric endpoint, applies
 // the filters to the decoded metrics, and prints them to the terminal.
-func getAndDisplayMetrics(endpoint string, filters *processing.Filters) error{
+func getAndDisplayMetrics(endpoint string, filters *processing.Filters) error {
 	decoder, err := gather.DecoderFromEndpoint(endpoint)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
+	}
 	return display.DisplayMetrics(decoder, filters)
 }
