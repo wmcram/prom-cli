@@ -12,6 +12,7 @@ import (
 	"github.com/guptarohit/asciigraph"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/wmcram/prom-cli/internal/gather"
 	"github.com/wmcram/prom-cli/internal/processing"
 	"golang.org/x/term"
 )
@@ -79,18 +80,23 @@ func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) error {
 }
 
 // GraphMetric graphs a metric through time to the terminal.
-func GraphMetric(ctx context.Context, endpoint string, metricName string, interval time.Duration) error {
+func GraphMetric(ctx context.Context, endpoint string, filters *processing.Filters, interval time.Duration) error {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	asciigraph.Width(TermWidth)
 	asciigraph.Height(TermHeight)
-	test := []float64{}
+	ts := []float64{}
 
-	printGraph(endpoint, metricName, test)
+
 	for {
 		select {
 		case <-ticker.C:
-			printGraph(endpoint, metricName, test)
+			v, metricName, err := gather.GetMetricValue(endpoint, filters)
+			if err != nil {
+				return err
+			}
+			ts = append(ts, v) 
+			printGraph(endpoint, metricName, ts)
 		case <-ctx.Done():
 			return nil
 		}
