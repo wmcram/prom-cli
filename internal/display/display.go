@@ -1,12 +1,15 @@
 package display
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
+	"github.com/guptarohit/asciigraph"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/wmcram/prom-cli/internal/processing"
@@ -25,10 +28,11 @@ func init() {
 	}
 }
 
+// colors for the pretty-printed output.
 var (
-	titleColor    = color.New(color.FgHiCyan).PrintfFunc()
-	valueColor    = color.New(color.FgHiGreen).PrintfFunc()
-	labelColor    = color.New(color.FgMagenta).PrintfFunc()
+	titleColor = color.New(color.FgHiCyan).PrintfFunc()
+	valueColor = color.New(color.FgHiGreen).PrintfFunc()
+	labelColor = color.New(color.FgMagenta).PrintfFunc()
 )
 
 // DisplayMetrics prints the metrics to the screen after filtering.
@@ -68,8 +72,34 @@ func DisplayMetrics(decoder expfmt.Decoder, filters *processing.Filters) error {
 			case dto.MetricType_GAUGE:
 				valueColor(" %.2f\n", metric.GetGauge().GetValue())
 			}
-			
+
 		}
 	}
 	return nil
+}
+
+// GraphMetric graphs a metric through time to the terminal.
+func GraphMetric(ctx context.Context, endpoint string, metricName string, interval time.Duration) error {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	asciigraph.Width(TermWidth)
+	asciigraph.Height(TermHeight)
+	test := []float64{}
+
+	printGraph(endpoint, metricName, test)
+	for {
+		select {
+		case <-ticker.C:
+			printGraph(endpoint, metricName, test)
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+// printGraph prints the graph to the screen.
+func printGraph(endpoint string, metricName string, ts []float64) {
+	asciigraph.Clear()
+	plt := asciigraph.Plot(ts, asciigraph.AxisColor(asciigraph.Salmon), asciigraph.Width(TermWidth/2), asciigraph.Height(TermHeight/2), asciigraph.Caption(fmt.Sprintf("%s -- %s", endpoint, metricName)), asciigraph.Offset(TermWidth/5))
+	fmt.Println(plt)
 }

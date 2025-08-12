@@ -1,21 +1,23 @@
 package processing
 
 import (
-	"strings"
 	dto "github.com/prometheus/client_model/go"
+	"strings"
 )
 
+// Filters contains information about what kinds of metrics should be included in a query.
 type Filters struct {
-	nameFilter map[string]bool
+	nameFilter  map[string]bool
 	labelFilter map[string]string
-	typeFilter map[string]bool
+	typeFilter  map[string]bool
 }
 
+// NewFilters creates a Filters struct from the given cli flags
 func NewFilters(nameFilter string, labelFilter string, typeFilter string) *Filters {
 	return &Filters{
-		nameFilter: processNameFilter(nameFilter),
+		nameFilter:  processNameFilter(nameFilter),
 		labelFilter: processLabelFilter(labelFilter),
-		typeFilter: processTypeFilter(typeFilter),
+		typeFilter:  processTypeFilter(typeFilter),
 	}
 }
 
