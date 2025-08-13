@@ -3,22 +3,42 @@ package gather
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/wmcram/prom-cli/internal/processing"
 )
 
-// DecoderFromEndpoint turns the response from an endpoint into a prometheus metric decoder.
+var httpClient = &http.Client{
+	Timeout: 5 * time.Second,
+}
+
+// DecoderFromEndpoint makes an http request to an endpoint, turning the response into a Prometheus Decoder.
 func DecoderFromEndpoint(endpoint string) (expfmt.Decoder, error) {
-	resp, err := http.Get(endpoint)
+	url, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	request := http.Request{
+		Method: http.MethodGet,
+		URL:    url,
+		Header: make(map[string][]string),
+	}
+	// attempt to negotiate protobufs with endpoint
+	request.Header.Set("Accept", "application/vnd.google.protobuf; proto=io.prometheus.client.MetricFamily; encoding=delimited")
+
+	resp, err := httpClient.Do(&request)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("non-200 status code: %d", resp.StatusCode)
 	}
-	decoder := expfmt.NewDecoder(resp.Body, expfmt.NewFormat(expfmt.TypeTextPlain))
+
+	decoder := expfmt.NewDecoder(resp.Body, expfmt.ResponseFormat(resp.Header))
 	return decoder, nil
 }
 

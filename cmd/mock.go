@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// The subcommand `promcli mock`. It takes a file containing some metrics in plaintext format,
+// and serves them on a specified port.
 var mockCommand = &cli.Command{
 	Name:    "mock",
 	Aliases: []string{"m"},
