@@ -27,6 +27,11 @@ As long as `GOBIN` is in your `PATH`, you should be able to just type
 - `graph`: like above, but visualized as a graph
 - `mock`: for serving a mock metrics endpoint from a file
 
+The most basic thing you can do is query an endpoint for a certain metric family:
+```bash
+promcli get -n <name> <endpoint>
+```
+
 For subcommands that interact with an external endpoint, you can set
 the environment variable `PROMCLI_ENDPOINT` to avoid typing it out for
 every command.

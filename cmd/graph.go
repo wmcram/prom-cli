@@ -14,7 +14,7 @@ import (
 var graphCommand = &cli.Command{
 	Name:    "graph",
 	Aliases: []string{"g"},
-	Usage:   "graph metrics from an endpoint. the metric must be uniquely determined by the filters!",
+	Usage:   "graph a metric from an endpoint. the metric must be uniquely determined by the filters!",
 	Flags: append(filterFlags,
 		&cli.DurationFlag{
 			Name:    "interval",
